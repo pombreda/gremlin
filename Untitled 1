@@ -1,0 +1,19 @@
+v = LinVar("v")
+w = LinVar("w")
+h = LinVar("h")
+
+ast = (
+    Label("Choose").X(w)
+    ---
+    Radio("A", checked = v == 1).X(w, None) 
+    ---
+    Radio("B", checked = v == 2).X(w, None)
+    ---
+    Radio("C", checked = v == 3).X(w, None)
+    ---
+    Button("OK", clicked = k).X(w, None)
+).X(w(300), h(200))
+
+v = 1*checked1 + 2*checked2 + 3*checked3
+
+
