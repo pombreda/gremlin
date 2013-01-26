@@ -1,3 +1,6 @@
+"""
+Simple IRC client/channel abstraction By Tomer Filiba
+"""
 import irc.client
 import threading
 import itertools
