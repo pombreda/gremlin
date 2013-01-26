@@ -173,10 +173,10 @@ class LinEq(object):
 
 class LinVar(LinearMixin):
     __slots__ = ["name", "kind", "default"]
-    def __init__(self, name, kind = None):
+    def __init__(self, name, kind = None, default = None):
         self.name = name
         self.kind = kind
-        self.default = None
+        self.default = default
     def __repr__(self):
         return self.name
     def __eq__(self, other):
@@ -190,6 +190,7 @@ class LinVar(LinearMixin):
         return hash(self.name)
     def __getitem__(self, default):
         self.default = default
+        return self
 
 class Coeff(LinearMixin):
     __slots__ = ["var", "coeff"]
@@ -341,6 +342,7 @@ class LinSys(object):
                 raise ValueError("%r is not a known variable in this system" % (fv,))
             vars_indexes[fv] = counter.next()
         
+        #print "@@", sorted(vars_indexes, key=lambda k: vars_indexes[k])
         matrix, vars = self.to_matrix(vars_indexes)         # @ReservedAssignment
         return solve_matrix(matrix, vars)
 

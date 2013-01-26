@@ -119,6 +119,7 @@ class AtomNode(BaseNode):
     def __init__(self, **attrs):
         BaseNode.__init__(self)
         self.attrs = attrs
+        self.watchers = {}
     def __repr__(self):
         return self._repr_dims("%s(%s)" % (self.__class__.__name__[:-4], ", ".join("%s = %r" % (k, v) 
             for k, v in self.attrs.items() if v is not None)))
@@ -131,6 +132,16 @@ class AtomNode(BaseNode):
             obj = getattr(self, k, None)
             if isinstance(obj, LinVar):
                 yield LinEq(obj, v)
+    
+    def set(self, attr, value):
+        if self.attrs.get(value, NotImplemented) != value:
+            self.attrs[attr] = value
+            for cb in self.watchers.get(attr, ()):
+                cb(value)
+    def watch(self, attr, callback):
+        if attr not in self.watchers:
+            self.watchers[attr] = []
+        self.watchers[attr].append(callback)
 
 class LabelNode(AtomNode):
     def __init__(self, text = ""):
@@ -166,6 +177,12 @@ class ListNode(AtomNode):
         AtomNode.__init__(self, text = text, selected = selected, items = items)
         self.selected = LinVar("_selected%d" % (self.id,), "action")
 
+class PaddingNode(AtomNode):
+    def __init__(self):
+        AtomNode.__init__(self)
+    @classmethod
+    def X(cls, width = None, height = None):
+        return AtomNode.X(cls(), width, height)
 
 
 if __name__ == "__main__":

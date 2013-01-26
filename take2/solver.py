@@ -13,14 +13,14 @@ class ConstraintSolver(object):
         self.root = root
         self.linsys = LinSys(list(self.root.get_constraints()))
         freeness_relation = [None, "user", "offset", "cons", "padding", "default", "input"]
-        var_order = sorted(self.linsys.get_vars(), key = lambda v: freeness_relation.index(v.type))
+        var_order = sorted(self.linsys.get_vars(), key = lambda v: freeness_relation.index(v.kind))
         self.solution = self.linsys.solve(var_order)
         for var in self.get_freevars():
-            if var.type == "padding":
+            if var.kind == "padding":
                 self.solution[var] = 0.0
         self.dependencies = self._calculate_dependencies()
         self.results = {}
-        self.update({var : var.default for var in self.get_freevars() if var.default is not None})
+        self.watchers = {}
 
     def __str__(self):
         return "\n".join("%s = %s" % (k, v) for k, v in self.solution.items()
@@ -28,9 +28,10 @@ class ConstraintSolver(object):
     def __getitem__(self, var):
         if var in self.results:
             return self.results[var]
-        return self.solution[var]
+        return NotImplemented
+        #return self.solution[var]
     def __contains__(self, var):
-        return var in self.results or var in self.solution
+        return var in self.results #or var in self.solution
 
     def is_free(self, var):
         return isinstance(self.solution[var], FreeVar)
@@ -62,7 +63,7 @@ class ConstraintSolver(object):
         return dependencies
 
     def update(self, freevars):
-        #prev_results = self.results.copy()
+        prev_results = self.results.copy()
         for k in freevars.keys():
             if not self.is_free(k):
                 raise ValueError("%r is not a free variable" % (k,))
@@ -78,8 +79,11 @@ class ConstraintSolver(object):
             self.results[key] = NotImplemented
             v = self.solution[key]
             if isinstance(v, FreeVar):
-                if key not in freevars and key.default is not None:
-                    self.results[key] = key.default
+                if key not in freevars:
+                    if key.default is not None:
+                        self.results[key] = key.default
+                    else:
+                        raise ValueError("No value specified for %r" % (key,))
                 else:
                     self.results[key] = freevars[key]
             elif hasattr(v, "eval"):
@@ -92,11 +96,41 @@ class ConstraintSolver(object):
         for k in self.solution:
             rec_eval(k)
         
+        for k, v in self.results.items():
+            prev = prev_results.get(k, NotImplemented)
+            if prev != v:
+                for cb in self.watchers.get(k, ()):
+                    cb(prev, v)
+        
         return self.results
+    
+    def flash(self, var):
+        self.update({var : 1})
+        self.update({var : 0})
+    def set(self, var, val):
+        self.update({var : val})
+    
+    def watch(self, var, callback):
+        if not var in self.watchers:
+            self.watchers[var] = []
+        self.watchers[var].append(callback)
 
 
 if __name__ == "__main__":
-    pass
+    from dsl import LabelNode, ButtonNode
+    
+    w = LinVar("w")
+    x = (LabelNode("Hello").X(w, 30) | LabelNode("foo").X(w)) --- ButtonNode("bar").X(w*3)
+    #print x
+    #print list(x.get_constraints())
+    solver = ConstraintSolver(x)
+    solver.update({"_h3" : 70})
+    print solver
+    print solver["w"]
+
+
+
+
 
 
 
