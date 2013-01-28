@@ -94,7 +94,7 @@ class HLayoutNode(LayoutNode):
             yield LinEq(self._get_offset(child), sum(child.w for child in self.children[:i]))
         total = sum(child.w for child in self.children)
         yield LinEq(self.total, total)
-        yield LinEq(self.w, total + self.scroll)
+        yield LinEq(self.w, self.total + self.scroll)
         for child in self.children:
             yield LinEq(self.h, child.h + self._get_padder(child))
 
@@ -108,7 +108,7 @@ class VLayoutNode(LayoutNode):
             yield LinEq(self._get_offset(child), sum(child.h for child in self.children[:i]))
         total = sum(child.h for child in self.children)
         yield LinEq(self.total, total)
-        yield LinEq(self.h, total + self.scroll)
+        yield LinEq(self.h, self.total + self.scroll)
         for child in self.children:
             yield LinEq(self.w, child.w + self._get_padder(child))
 

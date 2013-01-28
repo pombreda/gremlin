@@ -19,6 +19,7 @@ class ConstraintSolver(object):
             if var.kind == "padding":
                 self.solution[var] = 0.0
         self.dependencies = self._calculate_dependencies()
+        print self.dependencies
         self.results = {}
         self.watchers = {}
 
@@ -28,10 +29,9 @@ class ConstraintSolver(object):
     def __getitem__(self, var):
         if var in self.results:
             return self.results[var]
-        return NotImplemented
-        #return self.solution[var]
+        return self.solution[var]
     def __contains__(self, var):
-        return var in self.results #or var in self.solution
+        return var in self.results or var in self.solution
 
     def is_free(self, var):
         return isinstance(self.solution[var], FreeVar)
@@ -123,10 +123,13 @@ if __name__ == "__main__":
     x = (LabelNode("Hello").X(w, 30) | LabelNode("foo").X(w)) --- ButtonNode("bar").X(w*3)
     #print x
     #print list(x.get_constraints())
+    for eq in x.get_constraints():
+        print eq
+    
+    print "======================================="
     solver = ConstraintSolver(x)
     solver.update({"_h3" : 70})
     print solver
-    print solver["w"]
 
 
 
