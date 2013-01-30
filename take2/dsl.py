@@ -83,6 +83,10 @@ class LayoutNode(BaseNode):
         for child in self.children:
             for cons in child.get_constraints():
                 yield cons
+    
+    def init_watchers(self):
+        for child in self.children:
+            child.init_watchers()
 
 class HLayoutNode(LayoutNode):
     SYMBOL = " | "
@@ -142,6 +146,11 @@ class AtomNode(BaseNode):
         if attr not in self.watchers:
             self.watchers[attr] = []
         self.watchers[attr].append(callback)
+    def init_watchers(self):
+        for attr, callbacks in self.watchers.items():
+            for cb in callbacks:
+                cb(self.attrs.get(attr))
+        
 
 class LabelNode(AtomNode):
     def __init__(self, text = ""):

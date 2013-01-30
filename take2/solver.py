@@ -1,4 +1,4 @@
-from linsys import LinSys, FreeVar, LinVar, BinExpr
+from linsys import LinSys, FreeVar, LinVar, LinEq, BinExpr
 
 
 class RecEvalDict(object):
@@ -11,15 +11,18 @@ class RecEvalDict(object):
 class ConstraintSolver(object):
     def __init__(self, root):
         self.root = root
+        self.window_width = LinVar("window_width", "input")
+        self.window_height = LinVar("window_height", "input")
         self.linsys = LinSys(list(self.root.get_constraints()))
-        freeness_relation = [None, "user", "offset", "cons", "padding", "default", "input"]
+        self.linsys.append(LinEq(self.root.w, self.window_width))
+        self.linsys.append(LinEq(self.root.h, self.window_height))
+        freeness_relation = ["offset", "cons", "user", None, "padding", "input"]
         var_order = sorted(self.linsys.get_vars(), key = lambda v: freeness_relation.index(v.kind))
         self.solution = self.linsys.solve(var_order)
         for var in self.get_freevars():
             if var.kind == "padding":
                 self.solution[var] = 0.0
         self.dependencies = self._calculate_dependencies()
-        print self.dependencies
         self.results = {}
         self.watchers = {}
 
@@ -99,8 +102,9 @@ class ConstraintSolver(object):
         for k, v in self.results.items():
             prev = prev_results.get(k, NotImplemented)
             if prev != v:
+                print "solver: %s=%r" % (k, v)
                 for cb in self.watchers.get(k, ()):
-                    cb(prev, v)
+                    cb(v)
         
         return self.results
     
@@ -114,21 +118,17 @@ class ConstraintSolver(object):
         if not var in self.watchers:
             self.watchers[var] = []
         self.watchers[var].append(callback)
+    
 
 
 if __name__ == "__main__":
     from dsl import LabelNode, ButtonNode
     
     w = LinVar("w")
-    x = (LabelNode("Hello").X(w, 30) | LabelNode("foo").X(w)) --- ButtonNode("bar").X(w*3)
-    #print x
-    #print list(x.get_constraints())
-    for eq in x.get_constraints():
-        print eq
+    x = ((LabelNode("Hello").X(w, 30) | LabelNode("foo").X(w)) --- ButtonNode("bar").X(w*3))#.X(300, 200)
     
-    print "======================================="
     solver = ConstraintSolver(x)
-    solver.update({"_h3" : 70})
+    solver.update({"window_height" : 300, "window_width" : 500})
     print solver
 
 
